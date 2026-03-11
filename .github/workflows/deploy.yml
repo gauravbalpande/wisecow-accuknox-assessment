@@ -33,14 +33,17 @@ jobs:
           timeout 5 ./wisecow.sh test || true
 
       - name: Validate Kubernetes manifests
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
-          kubectl apply --dry-run=client -f k8s/namespace.yaml
-          kubectl apply --dry-run=client -f k8s/deployment.yaml
-          kubectl apply --dry-run=client -f k8s/service.yaml
-          kubectl apply --dry-run=client -f k8s/ingress.yaml
+        # run: |
+        #   curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        #   chmod +x kubectl
+        #   sudo mv kubectl /usr/local/bin/
+        #   kubectl apply --dry-run=client -f k8s/namespace.yaml
+        #   kubectl apply --dry-run=client -f k8s/deployment.yaml
+        #   kubectl apply --dry-run=client -f k8s/service.yaml
+        #   kubectl apply --dry-run=client -f k8s/ingress.yaml
+        uses: instrumenta/kubeval-action@master
+        with:
+          files: k8s/
 
   # ─────────────────────────────────────────────
   # Job 2: Build & Push Docker Image
