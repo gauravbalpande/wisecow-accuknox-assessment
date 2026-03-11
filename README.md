@@ -1,12 +1,23 @@
-Wisecow DevOps Project 🐄
-Project Overview
+# 🐄 Wisecow DevOps Project
 
-Wisecow is a simple web application that displays random quotes using fortune and cowsay.
-This project demonstrates a complete DevOps workflow including containerization, CI/CD automation, and Kubernetes deployment.
+## 📌 Project Overview
 
-The objective of this assignment is to implement a production-like DevOps pipeline for deploying the application automatically.
+Wisecow is a simple web application that displays random quotes using `fortune` and `cowsay`.
 
-Architecture
+This project demonstrates a complete DevOps workflow, including:
+
+- **Docker containerization**
+- **CI/CD automation using GitHub Actions**
+- **Kubernetes deployment**
+- **Container registry integration**
+
+The goal of this project is to implement a production-grade CI/CD pipeline that automatically builds, tests, and deploys the application.
+
+---
+
+## 🏗 Architecture
+
+```
 Developer
    │
    ▼
@@ -29,98 +40,110 @@ Wisecow Application
    │
    ▼
 User Access
-Technologies Used
-Technology	Purpose
-Docker	Containerization
-Kubernetes	Container orchestration
-GitHub Actions	CI/CD automation
-GitHub Container Registry	Docker image storage
-Bash	Application script
-Python HTTP Server	Web server
-Project Structure
+```
+
+---
+
+## ⚙️ Technologies Used
+
+| Technology              | Purpose                     |
+|--------------------------|-----------------------------|
+| **Docker**              | Containerization           |
+| **Kubernetes**          | Container orchestration    |
+| **GitHub Actions**      | CI/CD automation           |
+| **GitHub Container Registry** | Docker image storage |
+| **Bash**                | Application logic          |
+| **Python HTTP Server**  | Web server                 |
+
+---
+
+## 📂 Project Structure
+
+```
 wisecow
 │
-├── .github
-│   └── workflows
-│       └── wisecow-ci.yml
+├── .github/workflows/
+│   └── wisecow-pipeline.yml
 │
-├── k8s
+├── k8s/
 │   ├── namespace.yaml
 │   ├── deployment.yaml
 │   ├── service.yaml
 │   └── ingress.yaml
 │
-├── scripts
-│   └── setup.sh
-│
 ├── wisecow.sh
 ├── Dockerfile
 ├── assignment-response.md
 └── README.md
-CI/CD Pipeline
+```
+
+---
+
+## 🚀 CI/CD Pipeline
 
 The CI/CD pipeline is implemented using GitHub Actions and runs automatically when code is pushed to the repository.
 
-Pipeline Stages
-1️⃣ Code Validation
+### Pipeline Stages
 
-Runs ShellCheck to validate bash scripts
+1. **Code Validation**
+   - Runs ShellCheck to validate Bash scripts.
+   - Tests script execution.
+   - Validates Kubernetes manifests.
 
-Tests application script execution
+2. **Build Docker Image**
+   - Builds the container image using Docker Buildx.
 
-Validates Kubernetes manifests
+3. **Push Image to Registry**
+   - Pushes the image to GitHub Container Registry (GHCR).
+   - Example image: `ghcr.io/gauravbalpande/wisecow`
 
-2️⃣ Build Docker Image
+4. **Deploy to Kubernetes**
+   - Creates a Kind cluster.
+   - Deploys Kubernetes manifests.
+   - Verifies deployment rollout.
 
-Builds the application container image
+---
 
-Uses Docker Buildx for efficient builds
+## 🐳 Docker Containerization
 
-3️⃣ Push Image to Registry
-
-Pushes the built image to GitHub Container Registry
-
-Example image:
-
-ghcr.io/<github-username>/wisecow
-4️⃣ Deploy to Kubernetes
-
-Creates a Kind Kubernetes cluster
-
-Deploys application using Kubernetes manifests
-
-Verifies deployment rollout
-
-Docker Containerization
-
-The application is containerized using Docker.
-
-Build Image
+### Build Image
+```bash
 docker build -t wisecow .
-Run Container
+```
+
+### Run Container
+```bash
 docker run -p 4499:4499 wisecow
+```
 
-Access application:
+Access the application at: [http://localhost:4499](http://localhost:4499)
 
-http://localhost:4499
-Kubernetes Deployment
+---
 
-The application is deployed using Kubernetes manifests.
+## ☸️ Kubernetes Deployment
 
-Apply manifests
+### Apply Kubernetes Manifests
+```bash
 kubectl apply -f k8s/
-Check pods
+```
+
+### Check Running Pods
+```bash
 kubectl get pods -n wisecow
-Port Forward
+```
+
+### Port Forward to Access the Application
+```bash
 kubectl port-forward svc/wisecow-service 8080:80 -n wisecow
+```
 
-Open browser:
+Access the application at: [http://localhost:8080](http://localhost:8080)
 
-http://localhost:8080
-Sample Output
+---
 
-Example response from the application:
+## 🖥 Example Application Output
 
+```
  ______________________
 < Fortune favors the brave >
  ----------------------
@@ -129,43 +152,46 @@ Example response from the application:
             (__)\       )\/\
                 ||----w |
                 ||     ||
-Security Best Practices Implemented
+```
 
-Non-root container user
+---
 
-Minimal base image
+## 🔒 Security Best Practices
 
-Health checks in Docker container
+- Runs container as a non-root user.
+- Uses a minimal base image.
+- Implements Docker health checks.
+- Validates code through CI before deployment.
 
-CI validation before deployment
+---
 
-Future Improvements
+## 📈 Future Improvements
 
-Possible improvements for production deployment:
+Potential enhancements include:
 
-Deploy application on AWS EKS
+- Deploying the application on AWS EKS.
+- Using Helm charts for Kubernetes manifests.
+- Adding Prometheus and Grafana for monitoring.
+- Integrating Trivy for security scanning.
+- Implementing GitOps with ArgoCD.
 
-Use Helm charts for Kubernetes deployment
+---
 
-Add monitoring with Prometheus and Grafana
+## 📄 Assignment Response
 
-Add security scanning using Trivy
+A detailed explanation of the assignment solution can be found in `assignment-response.md`.
 
-Implement GitOps with ArgoCD
+---
 
-Assignment Response
+## 👨‍💻 Author
 
-Detailed explanation of the implementation is available here:
+**Gaurav Balpande**  
+DevOps | Cloud | Kubernetes | CI/CD  
 
-assignment-response.md
-Author
+GitHub: [https://github.com/gauravbalpande](https://github.com/gauravbalpande)
 
-Gaurav Balpande
+---
 
-DevOps | Cloud | Kubernetes | CI/CD
+## 🔗 Repository
 
-GitHub:
-https://github.com/gauravbalpande
-
-Repository Link
-https://github.com/gauravbalpande/wisecow
+[https://github.com/gauravbalpande/wisecow](https://github.com/gauravbalpande/wisecow)
