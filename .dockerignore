@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Kubernetes manifests
+k8s/
+
+# Scripts (not needed in Docker image)
+scripts/
+
+# Security policies
+security/
+
+# Documentation
+docs/
+*.md
+!wisecow.sh
+
+# CI/CD
+.github/
+
+# Backups
+*.backup
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
