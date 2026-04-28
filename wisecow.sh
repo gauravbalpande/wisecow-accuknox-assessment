@@ -11,7 +11,7 @@ generate_fortune() {
     if command -v fortune >/dev/null 2>&1 && command -v cowsay >/dev/null 2>&1; then
         fortune | cowsay
     else
-        cowsay "Hello! Fortune and cowsay are not installed. Please install them for full functionality."
+        echo "Wisecow: fortune/cowsay not installed (limited output)."
     fi
 }
 
