@@ -2,30 +2,46 @@ apiVersion: security.kubearmor.com/v1
 kind: KubeArmorPolicy
 metadata:
   name: wisecow-security-policy
-  namespace: default
+  namespace: wisecow
 spec:
   selector:
     matchLabels:
       app: wisecow
-  
-  # Block dangerous commands
+
+  # Zero-trust posture (block by default), then allow only what the app needs.
+  # This is intentionally strict for the "extra points" objective.
+  action: Block
+
   process:
     matchPaths:
-    - path: /usr/bin/wget
-      action: Block
-    - path: /usr/bin/curl  
-      action: Block
-    - path: /bin/su
-      action: Block
-    - path: /usr/bin/sudo
-      action: Block
-      
-  # Protect sensitive files
+      # Allow: bash entrypoint + python runtime
+      - path: /bin/bash
+        action: Allow
+      - path: /usr/bin/python3
+        action: Allow
+
+      # Allow: fortune + cowsay binaries (Debian installs these under /usr/games)
+      - path: /usr/games/fortune
+        action: Allow
+      - path: /usr/games/cowsay
+        action: Allow
+
+      # Block: common "download/exfil" tooling
+      - path: /usr/bin/curl
+        action: Block
+      - path: /usr/bin/wget
+        action: Block
+      - path: /bin/nc
+        action: Block
+
   file:
     matchPaths:
-    - path: /etc/passwd
-      action: Block
-    - path: /etc/shadow
-      action: Block
-      
-  action: Allow  # Allow everything else by default
+      # Block access to sensitive host-like files (defense-in-depth)
+      - path: /etc/shadow
+        action: Block
+
+    matchDirectories:
+      # The app never needs to write outside /tmp and its working dir.
+      - dir: /etc/
+        recursive: true
+        action: Block

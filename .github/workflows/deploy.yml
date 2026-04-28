@@ -19,31 +19,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Lint Bash scripts
         run: |
           sudo apt-get update && sudo apt-get install -y shellcheck
-          shellcheck wisecow.sh || true
-          shellcheck scripts/*.sh || true
+          shellcheck wisecow.sh
+          shellcheck scripts/*.sh
 
       - name: Test script execution
         run: |
           chmod +x wisecow.sh
-          timeout 5 ./wisecow.sh test || true
+          ./wisecow.sh test
 
       - name: Validate Kubernetes manifests
-        # run: |
-        #   curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        #   chmod +x kubectl
-        #   sudo mv kubectl /usr/local/bin/
-        #   kubectl apply --dry-run=client -f k8s/namespace.yaml
-        #   kubectl apply --dry-run=client -f k8s/deployment.yaml
-        #   kubectl apply --dry-run=client -f k8s/service.yaml
-        #   kubectl apply --dry-run=client -f k8s/ingress.yaml
-        uses: instrumenta/kubeval-action@master
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl apply --dry-run=client -f k8s/namespace.yaml
+          kubectl apply --dry-run=client -f k8s/serviceaccount.yaml
+          kubectl apply --dry-run=client -f k8s/deployment.yaml
+          kubectl apply --dry-run=client -f k8s/service.yaml
+          kubectl apply --dry-run=client -f k8s/ingress.yaml
+          kubectl apply --dry-run=client -f k8s/pdb.yaml
+          kubectl apply --dry-run=client -f k8s/networkpolicy.yaml
+          kubectl apply --dry-run=client -f k8s/hpa.yaml
+
+      - name: Dockerfile lint (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
         with:
-          files: k8s/
+          dockerfile: Dockerfile
 
   # ─────────────────────────────────────────────
   # Job 2: Build & Push Docker Image
@@ -59,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -91,6 +97,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Security scan image (Trivy)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: "0"
+          ignore-unfixed: true
+
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
 
@@ -105,10 +119,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Create Kind cluster
-        uses: helm/kind-action@v1
+        uses: kind-ci/kind-action@v1
         with:
           cluster_name: wisecow-cluster
 
@@ -131,20 +145,22 @@ jobs:
         run: |
           # Create namespace
           kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/serviceaccount.yaml
 
           # Create TLS secret
           kubectl create secret tls wisecow-tls-secret \
             --cert=tls.crt --key=tls.key \
             -n wisecow --dry-run=client -o yaml | kubectl apply -f -
 
-          # Update image tag in deployment
-          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          sed -i "s|ghcr.io/gauravbalpande/wisecow:latest|${IMAGE_TAG}|g" k8s/deployment.yaml
-
           # Apply manifests
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
           kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f k8s/pdb.yaml
+          kubectl apply -f k8s/networkpolicy.yaml
+
+          # Ensure image points to latest pushed tag
+          kubectl set image deployment/wisecow-deployment wisecow=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -n wisecow
 
       - name: Verify deployment
         run: |

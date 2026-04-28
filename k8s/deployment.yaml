@@ -20,6 +20,12 @@ spec:
       labels:
         app: wisecow
     spec:
+      serviceAccountName: wisecow-sa
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: wisecow
         image: ghcr.io/gauravbalpande/wisecow:latest
@@ -30,6 +36,9 @@ spec:
         env:
         - name: PORT
           value: "4499"
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
         resources:
           requests:
             memory: "64Mi"
@@ -55,11 +64,13 @@ spec:
         securityContext:
           runAsNonRoot: true
           runAsUser: 1001
+          runAsGroup: 1001
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
               - ALL
-      securityContext:
-        fsGroup: 1001
+      volumes:
+        - name: tmp
+          emptyDir: {}
       restartPolicy: Always

@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wisecow-default-deny-and-allow-ingress
+  namespace: wisecow
+spec:
+  podSelector:
+    matchLabels:
+      app: wisecow
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from ingress-nginx controller namespace (Kind/NGINX ingress)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4499
+    # Allow in-namespace access (debugging/port-forward endpoints)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: wisecow
+      ports:
+        - protocol: TCP
+          port: 4499
+  # This app does not need outbound network access for functionality.
+  # `egress: []` with policyTypes including Egress = deny all egress.
+  egress: []

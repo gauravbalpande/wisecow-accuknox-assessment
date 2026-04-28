@@ -38,6 +38,7 @@ check_command() {
 log_info "Running pre-flight checks..."
 check_command docker
 check_command kubectl
+check_command openssl
 log_success "All required tools are installed."
 
 # Detect cluster tool
@@ -73,6 +74,25 @@ elif [ "$CLUSTER_TOOL" = "minikube" ]; then
     fi
 fi
 
+# Install/enable ingress controller depending on cluster tool
+log_info "Installing/Enabling Ingress Controller..."
+if [ "$CLUSTER_TOOL" = "kind" ]; then
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+    kubectl wait --namespace ingress-nginx \
+        --for=condition=ready pod \
+        --selector=app.kubernetes.io/component=controller \
+        --timeout=180s
+    log_success "NGINX Ingress installed (Kind)."
+else
+    # Minikube
+    minikube addons enable ingress >/dev/null
+    kubectl wait --namespace ingress-nginx \
+        --for=condition=ready pod \
+        --selector=app.kubernetes.io/component=controller \
+        --timeout=180s || true
+    log_success "Ingress enabled (Minikube)."
+fi
+
 # ── Step 2: Build Docker Image ───────────────────────────────
 
 log_info "Step 2/6 — Building Docker image..."
@@ -99,6 +119,7 @@ log_success "TLS certificate generated for wisecow.local"
 
 log_info "Step 4/6 — Setting up Kubernetes namespace and secrets..."
 kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/serviceaccount.yaml
 
 kubectl create secret tls wisecow-tls-secret \
     --cert="$TLS_CERT" --key="$TLS_KEY" \
@@ -119,6 +140,16 @@ kubectl patch deployment wisecow-deployment -n "$NAMESPACE" \
 
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/ingress.yaml
+kubectl apply -f k8s/pdb.yaml
+kubectl apply -f k8s/networkpolicy.yaml
+
+# HPA requires metrics-server; apply if available
+if kubectl get apiservice v1beta1.metrics.k8s.io >/dev/null 2>&1 || kubectl get apiservice v1.metrics.k8s.io >/dev/null 2>&1; then
+    kubectl apply -f k8s/hpa.yaml
+    log_success "HPA applied (metrics API detected)."
+else
+    log_warn "Metrics API not detected; skipping HPA apply (k8s/hpa.yaml)."
+fi
 
 log_success "All manifests applied."
 
