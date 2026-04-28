@@ -102,7 +102,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Security scan image (Trivy)
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           # Scan the just-built image by digest to avoid tag timing/visibility issues.
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
