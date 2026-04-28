@@ -18,7 +18,8 @@ generate_fortune() {
 # Function to serve HTTP responses
 serve_request() {
     # Generate HTML response
-    local fortune_output=$(generate_fortune)
+    local fortune_output
+    fortune_output="$(generate_fortune)"
     
     # Escape HTML characters in fortune output
     fortune_output=$(echo "$fortune_output" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
@@ -273,7 +274,7 @@ start_server_netcat() {
                 # Serve the response
                 serve_request "$request"
             fi
-        } | nc -l $PORT
+        } | nc -l "$PORT"
         
         # Small delay to prevent rapid restarts
         sleep 1
