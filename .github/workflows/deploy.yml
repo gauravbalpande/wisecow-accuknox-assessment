@@ -33,16 +33,19 @@ jobs:
           ./wisecow.sh test
 
       - name: Validate Kubernetes manifests (offline)
-        uses: instrumenta/kubeconform-action@v0.6.7
-        with:
+        run: |
+          set -euo pipefail
+          # Install kubeconform (offline manifest validation)
+          curl -sSL -o kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar -xzf kubeconform.tar.gz kubeconform
+          chmod +x kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+
           # Validate everything under k8s/ without contacting a cluster.
           # KubeArmor CRDs may not have schemas available by default; ignore missing schemas.
-          args: >
-            -summary
-            -output text
-            -strict
-            -ignore-missing-schemas
-            k8s/*.yaml
+          kubeconform -summary -output text -strict -ignore-missing-schemas k8s/*.yaml
 
       - name: Dockerfile lint (Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
