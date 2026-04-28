@@ -51,6 +51,8 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
+          # Use explicit workspace path to avoid config pathing issues in the action container.
+          config: /github/workspace/.hadolint.yaml
 
   # ─────────────────────────────────────────────
   # Job 2: Build & Push Docker Image

@@ -1,0 +1,6 @@
+ignored:
+  # DL3008: Pin versions in apt-get install.
+  # For debian:12-slim images, pinning package versions often makes builds brittle
+  # and increases maintenance cost. We keep the Dockerfile secure and reproducible
+  # through a stable base image + CI scanning instead.
+  - DL3008
