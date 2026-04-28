@@ -141,6 +141,18 @@ jobs:
             --for=condition=ready pod \
             --selector=app.kubernetes.io/component=controller \
             --timeout=120s
+          echo "Waiting for ingress admission webhook endpoints..."
+          for i in $(seq 1 60); do
+            EP_ADDR="$(kubectl -n ingress-nginx get endpoints ingress-nginx-controller-admission -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null || true)"
+            if [ -n "${EP_ADDR}" ]; then
+              echo "Admission webhook ready."
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Admission webhook still not ready; continuing (deploy step will retry ingress apply)."
+            fi
+            sleep 2
+          done
 
       - name: Generate TLS certificate
         run: |
@@ -162,7 +174,14 @@ jobs:
           # Apply manifests
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+          # Ingress admission webhook can be briefly unavailable; retry.
+          for i in $(seq 1 10); do
+            if kubectl apply -f k8s/ingress.yaml; then
+              break
+            fi
+            echo "Ingress apply failed (attempt $i/10). Retrying in 3s..."
+            sleep 3
+          done
           kubectl apply -f k8s/pdb.yaml
           kubectl apply -f k8s/networkpolicy.yaml
 

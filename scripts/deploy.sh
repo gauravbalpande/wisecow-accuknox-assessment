@@ -93,6 +93,22 @@ else
     log_success "Ingress enabled (Minikube)."
 fi
 
+# Admission webhook can take a bit longer than the controller pod.
+log_info "Waiting for NGINX Ingress admission webhook..."
+for i in $(seq 1 60); do
+    if kubectl -n ingress-nginx get endpoints ingress-nginx-controller-admission >/dev/null 2>&1; then
+        EP_ADDR="$(kubectl -n ingress-nginx get endpoints ingress-nginx-controller-admission -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null || true)"
+        if [ -n "${EP_ADDR:-}" ]; then
+            log_success "Ingress admission webhook is ready."
+            break
+        fi
+    fi
+    if [ "$i" -eq 60 ]; then
+        log_warn "Ingress admission webhook not ready yet; continuing with retries."
+    fi
+    sleep 2
+done
+
 # ── Step 2: Build Docker Image ───────────────────────────────
 
 log_info "Step 2/6 — Building Docker image..."
@@ -139,7 +155,14 @@ kubectl patch deployment wisecow-deployment -n "$NAMESPACE" \
     --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "IfNotPresent"}]'
 
 kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
+# Apply ingress with retry (webhook can be briefly unavailable)
+for i in $(seq 1 10); do
+    if kubectl apply -f k8s/ingress.yaml; then
+        break
+    fi
+    log_warn "Ingress apply failed (attempt $i/10). Retrying in 3s..."
+    sleep 3
+done
 kubectl apply -f k8s/pdb.yaml
 kubectl apply -f k8s/networkpolicy.yaml
 
