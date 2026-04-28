@@ -37,16 +37,18 @@ jobs:
           curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
+          kubectl version --client=true
           # NOTE: `kubectl` may try to download OpenAPI schema from a cluster even for
           # client-side dry-run. In CI we validate structure without contacting a cluster.
-          kubectl apply --dry-run=client --validate=false -f k8s/namespace.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/serviceaccount.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/deployment.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/service.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/ingress.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/pdb.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/networkpolicy.yaml
-          kubectl apply --dry-run=client --validate=false -f k8s/hpa.yaml
+          # Force an empty kubeconfig to prevent accidental API discovery (localhost:8080).
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/namespace.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/serviceaccount.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/deployment.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/service.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/ingress.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/pdb.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/networkpolicy.yaml
+          kubectl --kubeconfig /dev/null apply --dry-run=client --validate=false -f k8s/hpa.yaml
 
       - name: Dockerfile lint (Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
