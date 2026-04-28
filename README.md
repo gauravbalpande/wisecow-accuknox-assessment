@@ -49,6 +49,23 @@ chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
 ```
 
+## Access URL (for reviewers)
+
+After `./scripts/deploy.sh` completes, you can access the application using **either** of the following:
+
+- **Primary (TLS via Ingress)**: `https://wisecow.local`
+  - Add hosts entry (one-time):
+
+```bash
+sudo sh -c 'echo "127.0.0.1 wisecow.local" >> /etc/hosts'
+```
+
+- **Fallback (Port-forward)**: `http://localhost:4499`
+
+```bash
+kubectl -n wisecow port-forward svc/wisecow-service 4499:80
+```
+
 Then add an `/etc/hosts` entry and open the app via TLS:
 
 ```bash
